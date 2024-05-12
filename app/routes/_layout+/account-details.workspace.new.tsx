@@ -56,7 +56,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   }
 }
 
-export const MAX_SIZE = 1024 * 1024 * 4; // 4MB
+export const MAX_SIZE = 1024 * 1024 * 10; // 10MB
 
 export async function action({ context, request }: ActionFunctionArgs) {
   const authSession = context.getSession();
