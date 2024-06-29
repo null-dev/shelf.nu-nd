@@ -70,7 +70,7 @@ const AssetQR = ({ qrObj, asset }: AssetType) => {
     content: () => captureDivRef.current,
   });
   return (
-    <div className="">
+    <div className="nd_qr-code-wrapper">
       <div className="mb-4 flex w-auto justify-center rounded border border-solid bg-white p-6">
         <QrLabel ref={captureDivRef} data={qrObj} title={asset.title} />
       </div>
