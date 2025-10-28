@@ -227,13 +227,13 @@ export function useSidebarNavItems() {
   ];
 
   const bottomMenuItems: NavItem[] = [
-    {
-      type: "child",
-      title: "Asset labels",
-      to: `https://store.shelf.nu/?ref=shelf_webapp_sidebar`,
-      Icon: QrCodeIcon,
-      target: "_blank",
-    },
+    //{
+    //  type: "child",
+    //  title: "Asset labels",
+    //  to: `https://store.shelf.nu/?ref=shelf_webapp_sidebar`,
+    //  Icon: QrCodeIcon,
+    //  target: "_blank",
+    //},
     {
       type: "child",
       title: "QR Scanner",
