@@ -184,7 +184,7 @@ export const CodeScanner = ({
   );
 
   const [mode, setMode] = useState<Mode>(
-    forceMode || (isMd ? "scanner" : "camera")
+    forceMode || "camera"
   );
 
   const handleModeChange = (mode: Mode) => {
