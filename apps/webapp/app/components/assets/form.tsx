@@ -337,7 +337,7 @@ export const AssetForm = ({
             subHeading={
               <p>
                 This is the initial object description. It will be shown on the
-                asset’s overview page. You can always change it. Maximum 1000
+                asset’s overview page. You can always change it. Maximum 10000
                 characters.
               </p>
             }
@@ -345,7 +345,7 @@ export const AssetForm = ({
           >
             <Input
               inputType="textarea"
-              maxLength={1000}
+              maxLength={10000}
               label={"Description"}
               name="description"
               defaultValue={description || ""}

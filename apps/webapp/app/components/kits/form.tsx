@@ -144,7 +144,7 @@ export default function KitsForm({
         >
           <Input
             inputType="textarea"
-            maxLength={1000}
+            maxLength={10000}
             label={"Description"}
             name={zo.fields.description()}
             defaultValue={description || ""}
