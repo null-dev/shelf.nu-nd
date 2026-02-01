@@ -231,7 +231,16 @@ export const CodePreview = ({
     }
   }
 
-  const printCode = useReactToPrint({
+  const printQrWithExt = () => {
+    const pqr = window.__EXT_printQr;
+    const qr = qrObj?.qr;
+    const title = item.name ?? item.type;
+    if(pqr == null || qr == null || title == null) return false;
+    pqr({ qr, title });
+    return true;
+  };
+
+  const printQrWithReact = useReactToPrint({
     contentRef: captureDivRef,
     onBeforePrint: () => {
       const container = captureDivRef.current;
@@ -239,6 +248,8 @@ export const CodePreview = ({
       return waitForImagesToLoad(container);
     },
   });
+
+  const printCode = () => printQrWithExt() || printQrWithReact();
 
   // Don't render if no codes available
   if (availableCodes.length === 0) {
