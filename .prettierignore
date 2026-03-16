@@ -7,6 +7,12 @@ apps/webapp/app/styles/tailwind.css
 
 # Environment files
 .env
+docker/.env.supabase
+docker/.env.shelf
+docker/.env.mail
 
 # Lock file
 pnpm-lock.yaml
+
+# Docker volumes (runtime data, root-owned)
+docker/volumes/

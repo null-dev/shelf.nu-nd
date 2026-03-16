@@ -1,0 +1,4 @@
+volumes/
+.env.supabase
+.env.shelf
+.env.mail

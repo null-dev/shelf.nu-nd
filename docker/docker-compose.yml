@@ -1,0 +1,126 @@
+# shelf.nu + Self-Hosted Supabase
+#
+# Usage:
+#   First-time setup:  ./setup.sh
+#   Start:             docker compose up -d
+#   Stop:              docker compose down
+#   Destroy:           docker compose down -v --remove-orphans
+#
+# The webapp is available at http://localhost:3000
+# Supabase Studio is available at http://localhost:8000 (Kong)
+# Supabase Studio UI is available at http://localhost:3001 (Studio)
+# Inbucket mail UI is available at http://localhost:9000 (catches all outgoing emails)
+
+name: shelf
+
+include:
+  - docker-compose.supabase.yml
+  - docker-compose.mail.yml
+
+services:
+  # Runs Prisma migrations before starting the webapp.
+  # Uses a minimal image with just the Prisma CLI and the migrations directory.
+  shelf-migrate:
+    container_name: shelf-migrate
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.migrate
+    env_file: .env.supabase
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DIRECT_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+      DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
+  # Creates the required Supabase storage buckets for shelf.nu.
+  # Runs once after storage is healthy.
+  shelf-storage-init:
+    container_name: shelf-storage-init
+    image: curlimages/curl:latest
+    env_file: .env.supabase
+    restart: "no"
+    depends_on:
+      storage:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
+    environment:
+      SUPABASE_URL: "http://kong:8000"
+      SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+    volumes:
+      - ./init-storage.sh:/init-storage.sh:ro
+    entrypoint: ["sh", "/init-storage.sh"]
+
+  webapp:
+    container_name: shelf-webapp
+    build:
+      context: ..
+      dockerfile: apps/webapp/Dockerfile.image
+    env_file:
+      - .env.supabase
+      - .env.shelf
+    restart: unless-stopped
+    ports:
+      - "${SHELF_PORT:-3000}:8080"
+    depends_on:
+      shelf-migrate:
+        condition: service_completed_successfully
+      shelf-storage-init:
+        condition: service_completed_successfully
+      auth:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
+      mail:
+        condition: service_started
+    environment:
+      # Database - uses direct connection (supavisor is optional for scaling)
+      DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+      DIRECT_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
+      # Supabase - connects via Kong gateway within Docker network
+      SUPABASE_URL: "http://kong:8000"
+      SUPABASE_ANON_PUBLIC: "${ANON_KEY}"
+      SUPABASE_SERVICE_ROLE: "${SERVICE_ROLE_KEY}"
+
+      # App
+      SERVER_URL: "${SERVER_URL:-http://localhost:3000}"
+      SESSION_SECRET: "${SESSION_SECRET}"
+      APP_NAME: "${APP_NAME:-Shelf}"
+      FINGERPRINT: "${FINGERPRINT:-shelf-self-hosted}"
+
+      # Features
+      ENABLE_PREMIUM_FEATURES: "${ENABLE_PREMIUM_FEATURES:-false}"
+      DISABLE_SIGNUP: "${SHELF_DISABLE_SIGNUP:-false}"
+      DISABLE_SSO: "${DISABLE_SSO:-true}"
+      SEND_ONBOARDING_EMAIL: "${SEND_ONBOARDING_EMAIL:-false}"
+
+      # Email (SMTP) — defaults to the local inbucket mail catcher.
+      # Override in .env with a real SMTP provider for production.
+      SMTP_HOST: "${SMTP_HOST:-mail}"
+      SMTP_PORT: "${SMTP_PORT:-2500}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PWD: "${SMTP_PWD:-}"
+      SMTP_FROM: "${SMTP_FROM:-Shelf <noreply@shelf.local>}"
+
+      # MapTiler — required by the app even if map features aren't used.
+      # Get a free key at https://www.maptiler.com/ or set a dummy value.
+      MAPTILER_TOKEN: "${MAPTILER_TOKEN:-dummy-maptiler-token}"
+      GEOCODING_USER_AGENT: "${GEOCODING_USER_AGENT:-shelf-self-hosted}"
+      INVITE_TOKEN_SECRET: "${INVITE_TOKEN_SECRET:-change-me-invite-secret}"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@shelf.nu}"
+      SUPPORT_EMAIL: "${SUPPORT_EMAIL:-support@shelf.nu}"
+      FULL_CALENDAR_LICENSE_KEY: "${FULL_CALENDAR_LICENSE_KEY:-}"
+
+      # Stripe (leave empty to disable premium features)
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
+      STRIPE_PUBLIC_KEY: "${STRIPE_PUBLIC_KEY:-}"
+      STRIPE_WEBHOOK_ENDPOINT_SECRET: "${STRIPE_WEBHOOK_ENDPOINT_SECRET:-}"
+      FREE_TRIAL_DAYS: "${FREE_TRIAL_DAYS:-14}"
+
+      # Sentry (optional)
+      SENTRY_DSN: "${SENTRY_DSN:-}"

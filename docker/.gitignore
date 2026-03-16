@@ -1,0 +1,8 @@
+# Environment files with secrets — never commit these
+.env
+.env.supabase
+.env.shelf
+.env.mail
+
+# All volume data is either downloaded by setup.sh or generated at runtime
+volumes/

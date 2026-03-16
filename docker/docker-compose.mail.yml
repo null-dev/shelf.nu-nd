@@ -1,0 +1,18 @@
+# Local mail catcher — catches all outgoing emails (no real delivery).
+# Included by docker-compose.yml — do not run this file directly.
+#
+# Web UI:  http://localhost:${INBUCKET_WEB_PORT:-9000}
+# SMTP:    port 2500 (internal Docker network)
+#
+# Replace SMTP_* vars in .env.supabase / .env.shelf with a real SMTP
+# provider for production.
+
+services:
+  mail:
+    container_name: shelf-mail
+    image: inbucket/inbucket:latest
+    env_file: .env.mail
+    restart: unless-stopped
+    ports:
+      - "${INBUCKET_WEB_PORT:-9000}:9000"  # web UI
+      - "${INBUCKET_SMTP_PORT:-2500}:2500" # SMTP
