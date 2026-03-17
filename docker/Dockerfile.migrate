@@ -8,15 +8,18 @@ ARG DEBIAN_FRONTEND="noninteractive"
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y openssl && \
+    apt-get install -y openssl postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy only the prisma directory (schema + migrations)
 COPY packages/database/prisma ./prisma
+
+# Copy post-migration SQL scripts
+COPY docker/post-migrate.sql ./post-migrate.sql
 
 # Bootstrap a clean npm project and install only the Prisma CLI.
 # We do NOT copy packages/database/package.json because it has workspace:*
 # dependencies that npm cannot resolve outside the monorepo.
 RUN npm init -y && npm install --save-dev prisma@6
 
-CMD ["npx", "prisma", "migrate", "deploy", "--schema=./prisma/schema.prisma"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && psql \"$DATABASE_URL\" -f ./post-migrate.sql"]
